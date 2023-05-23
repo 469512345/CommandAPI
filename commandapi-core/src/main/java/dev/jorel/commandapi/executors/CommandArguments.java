@@ -56,7 +56,6 @@ public class CommandArguments {
 	 * @param index The position of this argument
 	 * @return An argument which is placed at the given index, or {@code null} if the provided index does not point to an argument.
 	 */
-	@Nullable
 	public Object get(int index) {
 		if (args.length <= index) {
 			return null;
@@ -71,7 +70,6 @@ public class CommandArguments {
 	 * @param nodeName The node name of this argument. This was set when initializing an argument
 	 * @return An argument which has the given node name. Can be null if <code>nodeName</code> was not found.
 	 */
-	@Nullable
 	public Object get(String nodeName) {
 		return argsMap.get(nodeName);
 	}
@@ -167,7 +165,6 @@ public class CommandArguments {
 	 * @param index The position of this argument
 	 * @return An argument which is placed at the given index, or {@code null} if the provided index does not point to an argument.
 	 */
-	@Nullable
 	public <T> T getUnchecked(int index) {
 		return (T) get(index);
 	}
@@ -178,7 +175,6 @@ public class CommandArguments {
 	 * @param nodeName The node name of this argument. This was set when initializing an argument
 	 * @return An argument which has the given node name. Can be null if <code>nodeName</code> was not found.
 	 */
-	@Nullable
 	public <T> T getUnchecked(String nodeName) {
 		return (T) get(nodeName);
 	}

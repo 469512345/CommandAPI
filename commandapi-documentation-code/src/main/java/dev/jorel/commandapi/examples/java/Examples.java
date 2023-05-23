@@ -1596,23 +1596,19 @@ new CommandAPICommand("suicide")
 void optionalArguments() {
 /* ANCHOR: optionalArguments1 */
 new CommandAPICommand("sayhi")
-    .withOptionalArguments(new PlayerArgument("target"))
+    .withArguments(new PlayerArgument("target").asOptional())
     .executesPlayer((player, args) -> {
-        Player target = (Player) args.get("target");
-        if (target != null) {
-            target.sendMessage("Hi!");
-        } else {
-            player.sendMessage("Hi!");
-        }
+        Player target = ((Optional<Player>) args.get("target")).orElse(player);
+		target.sendMessage("Hi!");
     })
     .register();
 /* ANCHOR_END: optionalArguments1 */
 
 /* ANCHOR: optionalArguments2 */
 new CommandAPICommand("sayhi")
-    .withOptionalArguments(new PlayerArgument("target"))
+    .withArguments(new PlayerArgument("target").asOptional())
     .executesPlayer((player, args) -> {
-        Player target = (Player) args.getOrDefault("target", player);
+        Player target = ((Optional<Player>) args.get("target")).orElse(player);
         target.sendMessage("Hi!");
     })
     .register();
@@ -1620,11 +1616,11 @@ new CommandAPICommand("sayhi")
 
 /* ANCHOR: optionalArguments3 */
 new CommandAPICommand("rate")
-    .withOptionalArguments(new StringArgument("topic").combineWith(new IntegerArgument("rating", 0, 10)))
-    .withOptionalArguments(new PlayerArgument("target"))
+    .withArguments(new StringArgument("topic").asOptional().combineWith(new IntegerArgument("rating", 0, 10).asOptional()))
+    .withArguments(new PlayerArgument("target").asOptional())
     .executes((sender, args) -> {
-        String topic = (String) args.get("topic");
-        if(topic == null) {
+        Optional<String> topic = (Optional<String>) args.get("topic");
+        if(topic.isEmpty()) {
             sender.sendMessage(
                 "Usage: /rate <topic> <rating> <player>(optional)",
                 "Select a topic to rate, then give a rating between 0 and 10",
@@ -1633,13 +1629,13 @@ new CommandAPICommand("rate")
             return;
         }
 
-        // We know this is not null because rating is required if topic is given
-        int rating = (int) args.get("rating");
+        // We know this is present because rating is required if topic is given
+        int rating = ((Optional<Integer>) args.get("rating")).get();
 
         // The target player is optional, so give it a default here
-        CommandSender target = (CommandSender) args.getOrDefault("target", sender);
+		CommandSender target = ((Optional<CommandSender>) args.get("target")).orElse(sender);
 
-        target.sendMessage("Your " + topic + " was rated: " + rating + "/10");
+        target.sendMessage("Your " + topic.get() + " was rated: " + rating + "/10");
     })
     .register();
 /* ANCHOR_END: optionalArguments3 */

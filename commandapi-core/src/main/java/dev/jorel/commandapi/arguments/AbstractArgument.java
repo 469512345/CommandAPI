@@ -27,7 +27,6 @@ import dev.jorel.commandapi.AbstractArgumentTree;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.executors.CommandArguments;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -264,63 +263,39 @@ public abstract class AbstractArgument<T, Impl extends AbstractArgument<T, Impl,
 	// Optionality //
 	/////////////////
 
-	private boolean isOptional = false;
-	private final List<Argument> combinedArguments = new ArrayList<>();
+	/**
+	 * Makes this argument optional, wrapping its value in {@link Optional}.
+	 * If it is not present then {@link Optional#empty()} will be passed to the executor.
+	 *
+	 * @return an optional wrapper over this argument
+	 */
+	public abstract AbstractOptionalArgument<Optional, ?, Argument, CommandSender> asOptional();
+
+	/**
+	 * Gives this argument a constant default value, which will be passed to the executor if the argument is not provided.
+	 *
+	 * @param defaultValue constant to use as default value
+	 *
+	 * @return a wrapper over this argument with a default value
+	 */
+	public abstract AbstractOptionalArgument<T, ?, Argument, CommandSender> withDefaultValue(T defaultValue);
+
+	/**
+	 * Gives this argument a generated default value, which will be passed to the executor if the argument is not provided.
+	 *
+	 * @param defaultValue default value generator function
+	 *
+	 * @return a wrapper over this argument with a default value
+	 */
+	public abstract AbstractOptionalArgument<T, ?, Argument, CommandSender> withDefaultValue(DefaultValueFunction<T, CommandSender> defaultValue);
 
 	/**
 	 * Returns true if this argument will be optional when executing the command this argument is included in
 	 *
 	 * @return true if this argument will be optional when executing the command this argument is included in
 	 */
-	public boolean isOptional() {
-		return isOptional;
-	}
-
-	/**
-	 * Sets whether this argument will be optional when executing the command this argument is included in
-	 *
-	 * @param optional if true, this argument will be optional when executing the command this argument is included in
-	 * @return this current argument
-	 */
-	public Impl setOptional(boolean optional) {
-		this.isOptional = optional;
-		return instance();
-	}
-
-	/**
-	 * Returns a list of arguments linked to this argument.
-	 *
-	 * @return A list of arguments linked to this argument
-	 */
-	public List<Argument> getCombinedArguments() {
-		return combinedArguments;
-	}
-
-	/**
-	 * Returns true if this argument has linked arguments.
-	 *
-	 * @return true if this argument has linked arguments
-	 */
-	public boolean hasCombinedArguments() {
-		return !combinedArguments.isEmpty();
-	}
-
-	/**
-	 * Adds combined arguments to this argument. Combined arguments are used to have required arguments after optional arguments
-	 * by ignoring they exist until they are added to the arguments array for registration.
-	 *
-	 * This method also causes permissions and requirements from this argument to be copied over to the arguments you want to combine
-	 * this argument with. Their permissions and requirements will be ignored.
-	 *
-	 * @param combinedArguments The arguments to combine to this argument
-	 * @return this current argument
-	 */
-	@SafeVarargs
-	public final Impl combineWith(Argument... combinedArguments) {
-		for (Argument argument : combinedArguments) {
-			this.combinedArguments.add(argument);
-		}
-		return instance();
+	public final boolean isOptional() {
+		return this instanceof AbstractOptionalArgument;
 	}
 
 	///////////

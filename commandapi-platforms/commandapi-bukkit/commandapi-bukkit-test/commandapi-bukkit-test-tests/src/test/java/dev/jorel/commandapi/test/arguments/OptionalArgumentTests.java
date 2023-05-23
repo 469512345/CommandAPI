@@ -64,7 +64,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string"))
+			.withArguments(new StringArgument("string").asOptional())
 			.executesPlayer((player, args) -> {
 				type.set((String) args.get("string"));
 			})
@@ -83,8 +83,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string1"))
-			.withOptionalArguments(new StringArgument("string2"))
+			.withArguments(new StringArgument("string1").asOptional(), new StringArgument("string2"))
 			.executesPlayer((player, args) -> {
 				type.set((String) args.get("string1"));
 				type.set((String) args.get("string2"));
@@ -117,8 +116,7 @@ class OptionalArgumentTests extends TestBase {
 		// an OptionalArgumentException
 		assertThrows(OptionalArgumentException.class, () -> {
 			new CommandAPICommand("test")
-				.withOptionalArguments(new StringArgument("string1"))
-				.withArguments(new StringArgument("string2"))
+				.withArguments(new StringArgument("string1").asOptional(), new StringArgument("string2"))
 				.executesPlayer((player, args) -> {
 					type.set((String) args.get("string1"));
 					type.set((String) args.get("string2"));
@@ -130,8 +128,7 @@ class OptionalArgumentTests extends TestBase {
 		// to an optional argument should throw an OptionalArgumentException
 		assertThrows(OptionalArgumentException.class, () -> {
 			new CommandAPICommand("test")
-				.withOptionalArguments(new StringArgument("string1").combineWith(new StringArgument("string2")))
-				.withArguments(new StringArgument("string3"))
+				.withArguments(new StringArgument("string1").asOptional().combineWith(new StringArgument("string2").asOptional()), new StringArgument("string3"))
 				.executesPlayer(P_EXEC)
 				.register();
 		});
@@ -142,7 +139,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string"))
+			.withArguments(new StringArgument("string").asOptional())
 			.executesPlayer((player, args) -> {
 				type.set((String) args.getOrDefault("string", "hello"));
 			})
@@ -162,7 +159,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string"))
+			.withArguments(new StringArgument("string").asOptional())
 			.executesPlayer((player, args) -> {
 				type.set((String) args.getOrDefault("string", () -> "hello"));
 			})
@@ -182,7 +179,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string"))
+			.withArguments(new StringArgument("string").asOptional())
 			.executesPlayer((player, args) -> {
 				type.set((String) args.get(0));
 			})
@@ -201,7 +198,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string"))
+			.withArguments(new StringArgument("string").asOptional())
 			.executesPlayer((player, args) -> {
 				type.set((String) args.getOrDefault(0, "hello"));
 			})
@@ -220,7 +217,7 @@ class OptionalArgumentTests extends TestBase {
 		Mut<String> type = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string"))
+			.withArguments(new StringArgument("string").asOptional())
 			.executesPlayer((player, args) -> {
 				type.set((String) args.getOrDefault(0, () -> "hello"));
 			})
@@ -239,8 +236,8 @@ class OptionalArgumentTests extends TestBase {
 		Mut<Object> results = Mut.of();
 
 		new CommandAPICommand("test")
-			.withOptionalArguments(new StringArgument("string").combineWith(new IntegerArgument("number")))
-			.withOptionalArguments(new DoubleArgument("double"))
+			.withArguments(new StringArgument("string").asOptional().combineWith(new IntegerArgument("number").asOptional()))
+			.withArguments(new DoubleArgument("double").asOptional())
 			.executesPlayer(info -> {
 				results.set(info.args().get("string"));
 				results.set(info.args().get("number"));

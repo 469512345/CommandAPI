@@ -24,4 +24,22 @@ public abstract class Argument<T> extends AbstractArgument<T, Argument<T>, Argum
 	public Argument<T> instance() {
 		return this;
 	}
+
+	@Override
+	public OptionalArgument<T> asOptional() {
+		return new OptionalArgument<>(this);
+	}
+
+	@Override
+	public DefaultOptionalArgument<T> withDefaultValue(final T defaultValue) {
+		return new DefaultOptionalArgument<>(this, (sender, previousArgs) -> defaultValue);
+	}
+
+	@Override
+	public DefaultOptionalArgument<T> withDefaultValue(
+		final DefaultValueFunction<T, CommandSender> defaultValue
+	) {
+		return new DefaultOptionalArgument<>(this, defaultValue);
+	}
+
 }

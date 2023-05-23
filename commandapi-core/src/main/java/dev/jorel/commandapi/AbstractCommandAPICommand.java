@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import dev.jorel.commandapi.arguments.AbstractArgument;
+import dev.jorel.commandapi.arguments.AbstractOptionalArgument;
 import dev.jorel.commandapi.arguments.GreedyArgument;
+import dev.jorel.commandapi.commandsenders.AbstractCommandSender;
 import dev.jorel.commandapi.exceptions.GreedyArgumentException;
 import dev.jorel.commandapi.exceptions.MissingCommandExecutorException;
 import dev.jorel.commandapi.exceptions.OptionalArgumentException;
@@ -87,40 +89,6 @@ public abstract class AbstractCommandAPICommand<Impl extends AbstractCommandAPIC
 	@SafeVarargs
 	public final Impl withArguments(Argument... args) {
 		this.arguments.addAll(Arrays.asList(args));
-		return instance();
-	}
-
-	/**
-	 * Appends the optional arguments to the current command builder.
-	 * <p>
-	 * This also calls {@link AbstractArgument#setOptional(boolean)} on each argument to make sure they are optional
-	 *
-	 * @param args A <code>List</code> that represents the arguments that this
-	 *             command can accept
-	 * @return this command builder
-	 */
-	public Impl withOptionalArguments(List<Argument> args) {
-		for (Argument argument : args) {
-			argument.setOptional(true);
-			this.arguments.add(argument);
-		}
-		return instance();
-	}
-
-	/**
-	 * Appends the optional arguments to the current command builder.
-	 * <p>
-	 * This also calls {@link AbstractArgument#setOptional(boolean)} on each argument to make sure they are optional
-	 *
-	 * @param args Arguments that this command can accept
-	 * @return this command builder
-	 */
-	@SafeVarargs
-	public final Impl withOptionalArguments(Argument... args) {
-		for (Argument argument : args) {
-			argument.setOptional(true);
-			this.arguments.add(argument);
-		}
 		return instance();
 	}
 
@@ -288,11 +256,8 @@ public abstract class AbstractCommandAPICommand<Impl extends AbstractCommandAPIC
 			// Need to cast handler to the right CommandSender type so that argumentsArray and executor are accepted
 			@SuppressWarnings("unchecked")
 			CommandAPIHandler<Argument, CommandSender, ?> handler = (CommandAPIHandler<Argument, CommandSender, ?>) CommandAPIHandler.getInstance();
-			
-			// Create a List<Argument[]> that is used to register optional arguments
-			for (Argument[] args : getArgumentsToRegister(argumentsArray)) {
-				handler.register(meta, args, executor, isConverted);
-			}
+
+			registerWithOptionals(handler, argumentsArray);
 		}
 
 		// Convert subcommands into multiliteral arguments
@@ -325,21 +290,22 @@ public abstract class AbstractCommandAPICommand<Impl extends AbstractCommandAPIC
 
 	protected abstract Impl newConcreteCommandAPICommand(CommandMetaData<CommandSender> metaData);
 
-	private List<Argument[]> getArgumentsToRegister(Argument[] argumentsArray) {
-		List<Argument[]> argumentsToRegister = new ArrayList<>();
+	private void registerWithOptionals(CommandAPIHandler<Argument, CommandSender, ?> handler, Argument[] argumentsArray) {
 		List<Argument> currentCommand = new ArrayList<>();
 
 		Iterator<Argument> argumentIterator = List.of(argumentsArray).iterator();
+		int index = 0;
 
 		// Collect all required arguments, adding them as a command once finding the first optional
 		while(argumentIterator.hasNext()) {
 			Argument next = argumentIterator.next();
 			if(next.isOptional()) {
-				argumentsToRegister.add((Argument[]) currentCommand.toArray(new AbstractArgument[0]));
+				registerWithWrappedExecutor(handler,argumentsArray,currentCommand,index);
 				currentCommand.addAll(unpackCombinedArguments(next));
 				break;
 			}
 			currentCommand.addAll(unpackCombinedArguments(next));
+			index++;
 		}
 
 		// Collect the optional arguments, adding each one as a valid command
@@ -348,24 +314,41 @@ public abstract class AbstractCommandAPICommand<Impl extends AbstractCommandAPIC
 			if(!next.isOptional()) {
 				throw new OptionalArgumentException(meta.commandName); // non-optional argument after optional
 			}
-			argumentsToRegister.add((Argument[]) currentCommand.toArray(new AbstractArgument[0]));
+
+			registerWithWrappedExecutor(handler,argumentsArray,currentCommand,index);
 			currentCommand.addAll(unpackCombinedArguments(next));
+			index++;
 		}
 
 		// All the arguments expanded, also handles when there are no optional arguments
-		argumentsToRegister.add((Argument[]) currentCommand.toArray(new AbstractArgument[0]));
-		return argumentsToRegister;
+		registerWithWrappedExecutor(handler,argumentsArray,currentCommand,index);
+	}
+
+	/**
+	 * Registers a command with a wrapped executor to populate optional arguments
+	 */
+	private void registerWithWrappedExecutor(CommandAPIHandler<Argument, CommandSender, ?> handler, Argument[] argumentsArray, List<Argument> currentCommand, int index) {
+		//Get optional arguments - those after the required arguments
+		AbstractOptionalArgument[] optionalArguments = (AbstractOptionalArgument[]) Arrays.copyOfRange(argumentsArray, index, argumentsArray.length+1);
+		//Create a wrapped executor, which will populate the arguments array with optional arguments and default values
+		CommandAPIExecutor<CommandSender, AbstractCommandSender<? extends CommandSender>> wrappedExecutor = new CommandAPIExecutorWithOptionals<>(executor, optionalArguments);
+		handler.register(meta,
+			(Argument[]) currentCommand.toArray(new AbstractArgument[0]),
+			wrappedExecutor,
+			isConverted
+		);
 	}
 
 	private List<Argument> unpackCombinedArguments(Argument argument) {
-		if (!argument.hasCombinedArguments()) {
-			return List.of(argument);
-		}
 		List<Argument> combinedArguments = new ArrayList<>();
 		combinedArguments.add(argument);
-		for (Argument subArgument : argument.getCombinedArguments()) {
-			subArgument.copyPermissionsAndRequirements(argument);
-			combinedArguments.addAll(unpackCombinedArguments(subArgument));
+		if(argument instanceof AbstractOptionalArgument combinable) {
+			if(combinable.hasCombinedArguments()) {
+				for(Argument subArgument : (List<Argument>) combinable.getCombinedArguments()) {
+					subArgument.copyPermissionsAndRequirements(argument);
+					combinedArguments.addAll(unpackCombinedArguments(subArgument));
+				}
+			}
 		}
 		return combinedArguments;
 	}
